@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { listen } from '@tauri-apps/api/event';
 import TitleBar from './components/TitleBar';
 import Editor from './components/Editor';
@@ -9,11 +9,17 @@ import CommandPalette from './components/CommandPalette';
 import { useFile } from './hooks/useFile';
 import { useAutoSave } from './hooks/useAutoSave';
 import { useKeyboard } from './hooks/useKeyboard';
+import type { EditorHandle } from './types/editor';
+
+function dispatchEditorAction(action: string) {
+  window.dispatchEvent(new CustomEvent('editor-action', { detail: action }));
+}
 
 export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(true);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+  const editorRef = useRef<EditorHandle>(null);
 
   const file = useFile();
 
@@ -65,6 +71,15 @@ export default function App() {
         case 'command_palette':
           setCommandPaletteOpen((v) => !v);
           break;
+        case 'undo':
+          dispatchEditorAction('undo');
+          break;
+        case 'redo':
+          dispatchEditorAction('redo');
+          break;
+        case 'find':
+          dispatchEditorAction('find');
+          break;
       }
     });
 
@@ -96,6 +111,7 @@ export default function App() {
       { label: 'Save As', shortcut: '⇧⌘S', action: file.saveFileAs },
       { label: 'Toggle Sidebar', shortcut: '⌘B', action: toggleSidebar },
       { label: 'Toggle Preview', shortcut: '⌘P', action: togglePreview },
+      { label: 'Find & Replace', shortcut: '⌘F', action: () => dispatchEditorAction('find') },
     ],
     [file, toggleSidebar, togglePreview]
   );
@@ -117,7 +133,7 @@ export default function App() {
       <div className="flex flex-1 min-h-0">
         <Sidebar isOpen={sidebarOpen} onOpenFile={handleOpenRecent} />
 
-        <Editor content={file.content} onChange={file.updateContent} />
+        <Editor ref={editorRef} content={file.content} onChange={file.updateContent} />
 
         {previewOpen && <Preview content={file.content} />}
       </div>

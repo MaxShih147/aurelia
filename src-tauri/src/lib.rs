@@ -41,13 +41,27 @@ pub fn run() {
                 .build()?;
 
             let edit_menu = SubmenuBuilder::new(handle, "Edit")
-                .undo()
-                .redo()
+                .item(
+                    &MenuItemBuilder::with_id("undo", "Undo")
+                        .accelerator("CmdOrCtrl+Z")
+                        .build(handle)?,
+                )
+                .item(
+                    &MenuItemBuilder::with_id("redo", "Redo")
+                        .accelerator("CmdOrCtrl+Shift+Z")
+                        .build(handle)?,
+                )
                 .separator()
                 .cut()
                 .copy()
                 .paste()
                 .select_all()
+                .separator()
+                .item(
+                    &MenuItemBuilder::with_id("find", "Find & Replace")
+                        .accelerator("CmdOrCtrl+F")
+                        .build(handle)?,
+                )
                 .build()?;
 
             let view_menu = SubmenuBuilder::new(handle, "View")

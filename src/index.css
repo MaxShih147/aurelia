@@ -39,9 +39,12 @@ html, body, #root {
   background: rgba(255, 255, 255, 0.2);
 }
 
-/* Editor textarea */
-textarea::placeholder {
-  color: var(--deep-sea-text-muted);
+/* CodeMirror editor */
+.cm-editor {
+  height: 100%;
+}
+.cm-editor .cm-scroller {
+  font-family: "SF Mono", Menlo, Monaco, "Cascadia Code", monospace;
 }
 
 /* Markdown preview customizations */
