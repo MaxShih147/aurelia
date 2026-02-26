@@ -2,10 +2,16 @@ import { useEffect, useState } from 'react';
 import { FileText } from 'lucide-react';
 import type { RecentFile } from '../types';
 import { getRecentFiles } from '../lib/tauri';
+import OutlinePanel from './OutlinePanel';
+import BacklinksPanel from './BacklinksPanel';
 
 interface SidebarProps {
   isOpen: boolean;
+  outlineOpen: boolean;
+  content: string;
+  filePath?: string | null;
   onOpenFile: (path: string) => void;
+  onScrollToLine: (line: number) => void;
 }
 
 function timeAgo(timestamp: number): string {
@@ -19,7 +25,7 @@ function timeAgo(timestamp: number): string {
   return `${days}d ago`;
 }
 
-export default function Sidebar({ isOpen, onOpenFile }: SidebarProps) {
+export default function Sidebar({ isOpen, outlineOpen, content, filePath, onOpenFile, onScrollToLine }: SidebarProps) {
   const [recentFiles, setRecentFiles] = useState<RecentFile[]>([]);
 
   useEffect(() => {
@@ -34,10 +40,11 @@ export default function Sidebar({ isOpen, onOpenFile }: SidebarProps) {
 
   return (
     <div className="w-[200px] shrink-0 h-full bg-black/30 backdrop-blur-lg border-r border-white/8 flex flex-col overflow-hidden">
+      {/* Recent Files */}
       <div className="px-3 pt-10 pb-2 text-[10px] uppercase tracking-wider opacity-40 select-none">
         Recent Files
       </div>
-      <div className="flex-1 overflow-y-auto">
+      <div className="overflow-y-auto" style={{ maxHeight: outlineOpen ? '30%' : undefined, flex: outlineOpen ? undefined : 1 }}>
         {recentFiles.length === 0 && (
           <div className="px-3 py-2 text-xs opacity-30">No recent files</div>
         )}
@@ -55,6 +62,28 @@ export default function Sidebar({ isOpen, onOpenFile }: SidebarProps) {
           </button>
         ))}
       </div>
+
+      {/* Outline */}
+      {outlineOpen && (
+        <>
+          <div className="border-t border-white/8" />
+          <div className="px-3 pt-3 pb-2 text-[10px] uppercase tracking-wider opacity-40 select-none">
+            Outline
+          </div>
+          <OutlinePanel content={content} onScrollToLine={onScrollToLine} />
+        </>
+      )}
+
+      {/* Backlinks */}
+      {filePath && (
+        <>
+          <div className="border-t border-white/8" />
+          <div className="px-3 pt-3 pb-2 text-[10px] uppercase tracking-wider opacity-40 select-none">
+            Backlinks
+          </div>
+          <BacklinksPanel filePath={filePath} onOpenFile={onOpenFile} />
+        </>
+      )}
     </div>
   );
 }

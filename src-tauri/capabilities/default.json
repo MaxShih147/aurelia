@@ -43,6 +43,8 @@
       ]
     },
     "fs:default",
-    "shell:default"
+    "shell:default",
+    "core:window:allow-is-fullscreen",
+    "core:window:allow-set-fullscreen"
   ]
 }

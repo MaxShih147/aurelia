@@ -8,6 +8,8 @@ interface KeyboardActions {
   onToggleCommandPalette: () => void;
   onToggleSidebar: () => void;
   onTogglePreview: () => void;
+  onToggleOutline: () => void;
+  onToggleFullScreen: () => void;
 }
 
 export function useKeyboard(actions: KeyboardActions) {
@@ -23,7 +25,10 @@ export function useKeyboard(actions: KeyboardActions) {
           }
           break;
         case 'o':
-          if (!e.shiftKey) {
+          if (e.shiftKey) {
+            e.preventDefault();
+            actions.onToggleOutline();
+          } else {
             e.preventDefault();
             actions.onOpenFile();
           }
@@ -47,6 +52,12 @@ export function useKeyboard(actions: KeyboardActions) {
         case 'p':
           e.preventDefault();
           actions.onTogglePreview();
+          break;
+        case 'f':
+          if (e.ctrlKey) {
+            e.preventDefault();
+            actions.onToggleFullScreen();
+          }
           break;
       }
     };

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useImperativeHandle, forwardRef, useCallback } from 'react';
-import { EditorState } from '@codemirror/state';
+import { EditorState, Compartment } from '@codemirror/state';
 import { EditorView, keymap, placeholder, lineNumbers, highlightActiveLine, highlightActiveLineGutter, drawSelection, dropCursor } from '@codemirror/view';
 import { defaultKeymap, indentWithTab, history, historyKeymap, undo, redo } from '@codemirror/commands';
 import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
@@ -8,11 +8,18 @@ import { indentOnInput, bracketMatching, foldGutter, foldKeymap } from '@codemir
 import { search, searchKeymap, openSearchPanel } from '@codemirror/search';
 import { closeBrackets, closeBracketsKeymap } from '@codemirror/autocomplete';
 import { deepSeaTheme, deepSeaHighlightStyle } from '../lib/codemirror-theme';
+import { focusModeExtension, focusModeField, toggleFocusMode } from '../lib/cm-focus-mode';
+import { createImageDropHandler } from '../lib/image-drop';
 import type { EditorHandle } from '../types/editor';
 
 interface EditorProps {
   content: string;
   onChange: (content: string) => void;
+  spellCheck?: boolean;
+  focusMode?: boolean;
+  fontFamily?: string;
+  fontSize?: number;
+  filePath?: string | null;
 }
 
 // Patterns for list item matching
@@ -23,17 +30,15 @@ const CHECKBOX_ITEM_RE = /^(\s*)([-*+])\s\[[ x]\]\s(.*)$/;
 function handleListContinuation(view: EditorView): boolean {
   const state = view.state;
   const { from, to } = state.selection.main;
-  if (from !== to) return false; // has selection, use default
+  if (from !== to) return false;
 
   const line = state.doc.lineAt(from);
   const lineText = line.text;
 
-  // Check checkbox (before unordered)
   const checkboxMatch = lineText.match(CHECKBOX_ITEM_RE);
   if (checkboxMatch) {
     const [, indent, bullet, text] = checkboxMatch;
     if (text.trim() === '') {
-      // Empty → remove marker
       view.dispatch({ changes: { from: line.from, to: line.to, insert: '' } });
       return true;
     }
@@ -45,7 +50,6 @@ function handleListContinuation(view: EditorView): boolean {
     return true;
   }
 
-  // Check ordered list
   const orderedMatch = lineText.match(ORDERED_ITEM_RE);
   if (orderedMatch) {
     const [, indent, numStr, text] = orderedMatch;
@@ -62,7 +66,6 @@ function handleListContinuation(view: EditorView): boolean {
     return true;
   }
 
-  // Check unordered list
   const unorderedMatch = lineText.match(UNORDERED_ITEM_RE);
   if (unorderedMatch) {
     const [, indent, bullet, text] = unorderedMatch;
@@ -78,16 +81,35 @@ function handleListContinuation(view: EditorView): boolean {
     return true;
   }
 
-  return false; // Not in a list, use default Enter
+  return false;
 }
 
-const Editor = forwardRef<EditorHandle, EditorProps>(function Editor({ content, onChange }, ref) {
+// Compartments for dynamic reconfiguration
+const spellCheckCompartment = new Compartment();
+const fontCompartment = new Compartment();
+
+function makeSpellCheckExtension(enabled: boolean) {
+  return EditorView.contentAttributes.of({ spellcheck: enabled ? 'true' : 'false' });
+}
+
+function makeFontExtension(fontFamily: string, fontSize: number) {
+  return EditorView.theme({
+    '&': { fontFamily, fontSize: `${fontSize}px` },
+    '.cm-content': { fontFamily },
+    '.cm-gutters': { fontSize: `${fontSize}px` },
+  });
+}
+
+const Editor = forwardRef<EditorHandle, EditorProps>(function Editor(
+  { content, onChange, spellCheck = false, focusMode = false, fontFamily, fontSize, filePath },
+  ref
+) {
+  const filePathRef = useRef(filePath);
+  filePathRef.current = filePath;
   const containerRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
-
-  // Track whether the last change was internal (from CM6) to avoid feedback loops
   const isInternalChange = useRef(false);
 
   useImperativeHandle(ref, () => ({
@@ -113,9 +135,7 @@ const Editor = forwardRef<EditorHandle, EditorProps>(function Editor({ content, 
     const state = EditorState.create({
       doc: content,
       extensions: [
-        // List continuation must come before default keymap
         listContinuationKeymap,
-        // Core
         lineNumbers(),
         highlightActiveLine(),
         highlightActiveLineGutter(),
@@ -127,12 +147,9 @@ const Editor = forwardRef<EditorHandle, EditorProps>(function Editor({ content, 
         foldGutter(),
         history(),
         search(),
-        // Markdown language
         markdown({ base: markdownLanguage, codeLanguages: languages }),
-        // Theme
         deepSeaTheme,
         deepSeaHighlightStyle,
-        // Keymaps
         keymap.of([
           ...closeBracketsKeymap,
           ...searchKeymap,
@@ -141,12 +158,19 @@ const Editor = forwardRef<EditorHandle, EditorProps>(function Editor({ content, 
           indentWithTab,
           ...defaultKeymap,
         ]),
-        // Placeholder
         placeholder('Start writing...'),
-        // Sync changes to React
         updateListener,
-        // Editor config
         EditorView.lineWrapping,
+        // Dynamic compartments
+        spellCheckCompartment.of(makeSpellCheckExtension(spellCheck)),
+        fontCompartment.of(makeFontExtension(
+          fontFamily || '"SF Mono", Menlo, Monaco, "Cascadia Code", monospace',
+          fontSize || 14
+        )),
+        // Focus mode
+        focusModeExtension,
+        // Image drop
+        createImageDropHandler(() => filePathRef.current ?? null),
       ],
     });
 
@@ -161,21 +185,17 @@ const Editor = forwardRef<EditorHandle, EditorProps>(function Editor({ content, 
       view.destroy();
       viewRef.current = null;
     };
-    // Only run on mount
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Sync external content changes (file open, new file, etc.)
+  // Sync external content changes
   useEffect(() => {
     const view = viewRef.current;
     if (!view) return;
-
-    // Skip if this change originated from CM6 itself
     if (isInternalChange.current) {
       isInternalChange.current = false;
       return;
     }
-
     const currentDoc = view.state.doc.toString();
     if (currentDoc !== content) {
       view.dispatch({
@@ -184,24 +204,48 @@ const Editor = forwardRef<EditorHandle, EditorProps>(function Editor({ content, 
     }
   }, [content]);
 
+  // Update spell check dynamically
+  useEffect(() => {
+    const view = viewRef.current;
+    if (!view) return;
+    view.dispatch({
+      effects: spellCheckCompartment.reconfigure(makeSpellCheckExtension(spellCheck)),
+    });
+  }, [spellCheck]);
+
+  // Update font dynamically
+  useEffect(() => {
+    const view = viewRef.current;
+    if (!view) return;
+    view.dispatch({
+      effects: fontCompartment.reconfigure(makeFontExtension(
+        fontFamily || '"SF Mono", Menlo, Monaco, "Cascadia Code", monospace',
+        fontSize || 14
+      )),
+    });
+  }, [fontFamily, fontSize]);
+
+  // Update focus mode dynamically
+  useEffect(() => {
+    const view = viewRef.current;
+    if (!view) return;
+    const current = view.state.field(focusModeField);
+    if (current !== focusMode) {
+      view.dispatch({ effects: toggleFocusMode.of(focusMode) });
+    }
+  }, [focusMode]);
+
   // Expose undo/redo/search for menu events
   const handleMenuAction = useCallback((action: string) => {
     const view = viewRef.current;
     if (!view) return;
     switch (action) {
-      case 'undo':
-        undo(view);
-        break;
-      case 'redo':
-        redo(view);
-        break;
-      case 'find':
-        openSearchPanel(view);
-        break;
+      case 'undo': undo(view); break;
+      case 'redo': redo(view); break;
+      case 'find': openSearchPanel(view); break;
     }
   }, []);
 
-  // Listen for menu events that target the editor
   useEffect(() => {
     const handler = (e: CustomEvent<string>) => {
       handleMenuAction(e.detail);

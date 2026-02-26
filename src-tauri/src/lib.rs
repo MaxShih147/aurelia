@@ -14,6 +14,8 @@ pub fn run() {
             commands::write_file,
             commands::get_recent_files,
             commands::add_recent_file,
+            commands::copy_image,
+            commands::scan_markdown_files,
         ])
         .menu(|handle| {
             let new_file = MenuItemBuilder::with_id("new_file", "New")
@@ -29,12 +31,20 @@ pub fn run() {
                 .accelerator("CmdOrCtrl+Shift+S")
                 .build(handle)?;
 
+            let export_html = MenuItemBuilder::with_id("export_html", "Export HTML...")
+                .build(handle)?;
+            let export_pdf = MenuItemBuilder::with_id("export_pdf", "Export PDF...")
+                .build(handle)?;
+
             let file_menu = SubmenuBuilder::new(handle, "File")
                 .item(&new_file)
                 .item(&open_file)
                 .separator()
                 .item(&save_file)
                 .item(&save_as)
+                .separator()
+                .item(&export_html)
+                .item(&export_pdf)
                 .separator()
                 .close_window()
                 .quit()
@@ -75,6 +85,18 @@ pub fn run() {
                         .accelerator("CmdOrCtrl+P")
                         .build(handle)?,
                 )
+                .item(
+                    &MenuItemBuilder::with_id("toggle_outline", "Toggle Outline")
+                        .accelerator("CmdOrCtrl+Shift+O")
+                        .build(handle)?,
+                )
+                .separator()
+                .item(
+                    &MenuItemBuilder::with_id("toggle_fullscreen", "Toggle Full Screen")
+                        .accelerator("Ctrl+CmdOrCtrl+F")
+                        .build(handle)?,
+                )
+                .separator()
                 .item(
                     &MenuItemBuilder::with_id("command_palette", "Command Palette")
                         .accelerator("CmdOrCtrl+K")

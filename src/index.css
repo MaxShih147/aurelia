@@ -99,6 +99,25 @@ html, body, #root {
   transform: rotate(45deg);
 }
 
+/* Footnotes styling */
+.prose .footnotes {
+  border-top: 1px solid var(--deep-sea-border);
+  margin-top: 2em;
+  padding-top: 1em;
+  font-size: 0.85em;
+  opacity: 0.7;
+}
+
+/* KaTeX overrides for deep-sea theme */
+.katex { color: var(--deep-sea-text); }
+.katex .mord { color: var(--deep-sea-text); }
+
+/* Focus mode — dim non-active paragraphs */
+.cm-unfocused-line {
+  opacity: 0.25;
+  transition: opacity 0.3s ease;
+}
+
 /* Selection color — ocean blue */
 ::selection {
   background: rgba(56, 189, 248, 0.3);
