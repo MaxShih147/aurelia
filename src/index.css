@@ -1,0 +1,68 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+/* Deep Sea color palette */
+:root {
+  --deep-sea-bg: rgb(8, 12, 24);
+  --deep-sea-surface: rgba(255, 255, 255, 0.03);
+  --deep-sea-border: rgba(255, 255, 255, 0.08);
+  --deep-sea-text: rgba(203, 213, 225, 1);       /* slate-300 */
+  --deep-sea-text-muted: rgba(148, 163, 184, 0.6); /* slate-400/60 */
+  --deep-sea-accent: rgba(56, 189, 248, 0.8);     /* sky-400/80 — bioluminescent */
+  --deep-sea-glow: rgba(56, 189, 248, 0.15);
+}
+
+/* Ensure full transparency for Tauri */
+html, body, #root {
+  background: transparent !important;
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+  color: var(--deep-sea-text);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Custom scrollbar — thin and translucent */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Editor textarea */
+textarea::placeholder {
+  color: var(--deep-sea-text-muted);
+}
+
+/* Markdown preview customizations */
+.prose {
+  --tw-prose-body: var(--deep-sea-text);
+  --tw-prose-headings: rgba(241, 245, 249, 1);
+  --tw-prose-links: var(--deep-sea-accent);
+  --tw-prose-code: rgba(56, 189, 248, 0.9);
+  --tw-prose-pre-bg: rgba(0, 0, 0, 0.3);
+  --tw-prose-pre-code: var(--deep-sea-text);
+  --tw-prose-hr: var(--deep-sea-border);
+  --tw-prose-quotes: var(--deep-sea-text-muted);
+  --tw-prose-quote-borders: var(--deep-sea-accent);
+}
+
+/* Bioluminescent glow effect for headings */
+.prose h1, .prose h2 {
+  text-shadow: 0 0 20px var(--deep-sea-glow);
+}
+
+/* Selection color — ocean blue */
+::selection {
+  background: rgba(56, 189, 248, 0.3);
+}
