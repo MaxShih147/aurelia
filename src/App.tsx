@@ -142,8 +142,9 @@ export default function App() {
       onTogglePreview: togglePreview,
       onToggleOutline: toggleOutline,
       onToggleFullScreen: handleToggleFullScreen,
+      onToggleSettings: handleToggleSettings,
     }),
-    [file, toggleCommandPalette, toggleSidebar, togglePreview, toggleOutline, handleToggleFullScreen]
+    [file, toggleCommandPalette, toggleSidebar, togglePreview, toggleOutline, handleToggleFullScreen, handleToggleSettings]
   );
 
   useKeyboard(keyboardActions);

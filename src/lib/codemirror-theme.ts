@@ -2,6 +2,15 @@ import { EditorView } from '@codemirror/view';
 import { HighlightStyle, syntaxHighlighting } from '@codemirror/language';
 import { tags } from '@lezer/highlight';
 
+// Custom bioluminescent I-beam cursor
+const CURSOR_SVG = encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="24">' +
+  '<line x1="8" y1="2" x2="8" y2="22" stroke="#38bdf8" stroke-width="1.5" stroke-linecap="round"/>' +
+  '<line x1="5" y1="2" x2="11" y2="2" stroke="#38bdf8" stroke-width="1.5" stroke-linecap="round"/>' +
+  '<line x1="5" y1="22" x2="11" y2="22" stroke="#38bdf8" stroke-width="1.5" stroke-linecap="round"/>' +
+  '</svg>'
+);
+
 export const deepSeaTheme = EditorView.theme({
   '&': {
     backgroundColor: 'transparent',
@@ -16,6 +25,7 @@ export const deepSeaTheme = EditorView.theme({
   '.cm-content': {
     padding: '32px',
     caretColor: 'var(--deep-sea-accent)',
+    cursor: `url("data:image/svg+xml,${CURSOR_SVG}") 8 12, text`,
   },
   '.cm-cursor, .cm-dropCursor': {
     borderLeftColor: 'var(--deep-sea-accent)',
@@ -30,11 +40,11 @@ export const deepSeaTheme = EditorView.theme({
   '.cm-gutters': {
     backgroundColor: 'transparent',
     borderRight: 'none',
-    color: 'rgba(148, 163, 184, 0.3)',
+    color: 'rgba(148, 163, 184, 0.35)',
   },
   '.cm-activeLineGutter': {
     backgroundColor: 'transparent',
-    color: 'rgba(148, 163, 184, 0.6)',
+    color: 'rgba(148, 163, 184, 0.7)',
   },
   '.cm-lineNumbers .cm-gutterElement': {
     padding: '0 8px 0 16px',
@@ -47,40 +57,128 @@ export const deepSeaTheme = EditorView.theme({
     backgroundColor: 'rgba(56, 189, 248, 0.15)',
     color: 'var(--deep-sea-accent) !important',
   },
-  // Search panel styling
-  '.cm-panel.cm-search': {
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    backdropFilter: 'blur(20px)',
-    borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-    padding: '8px 12px',
+
+  // Fold gutter — brighter so details are visible
+  '.cm-foldGutter': {
+    color: 'rgba(148, 163, 184, 0.5)',
+    width: '16px',
   },
-  '.cm-panel.cm-search input, .cm-panel.cm-search button': {
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    border: '1px solid rgba(255, 255, 255, 0.1)',
+  '.cm-foldGutter .cm-gutterElement': {
+    cursor: 'pointer',
+    transition: 'color 0.2s',
+  },
+  '.cm-foldGutter .cm-gutterElement:hover': {
+    color: 'var(--deep-sea-accent)',
+  },
+  '.cm-foldPlaceholder': {
+    backgroundColor: 'rgba(56, 189, 248, 0.1)',
+    border: '1px solid rgba(56, 189, 248, 0.25)',
     borderRadius: '4px',
+    color: 'var(--deep-sea-accent)',
+    padding: '0 6px',
+    margin: '0 4px',
+  },
+
+  // Search panel — polished UI
+  '.cm-panel.cm-search': {
+    backgroundColor: 'rgba(15, 23, 42, 0.95)',
+    backdropFilter: 'blur(20px)',
+    borderBottom: '1px solid rgba(56, 189, 248, 0.15)',
+    padding: '12px 16px',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif',
+    fontSize: '13px',
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '6px',
+    alignItems: 'center',
+  },
+  '.cm-panel.cm-search input': {
+    backgroundColor: 'rgba(255, 255, 255, 0.07)',
+    border: '1px solid rgba(255, 255, 255, 0.12)',
+    borderRadius: '6px',
     color: 'var(--deep-sea-text)',
-    padding: '4px 8px',
+    padding: '6px 10px',
+    fontSize: '13px',
+    outline: 'none',
+    transition: 'border-color 0.2s, box-shadow 0.2s',
+  },
+  '.cm-panel.cm-search input:focus': {
+    borderColor: 'var(--deep-sea-accent)',
+    boxShadow: '0 0 0 2px rgba(56, 189, 248, 0.15)',
+  },
+  '.cm-panel.cm-search button': {
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    border: '1px solid rgba(255, 255, 255, 0.1)',
+    borderRadius: '6px',
+    color: 'var(--deep-sea-text)',
+    padding: '5px 10px',
     fontSize: '12px',
+    cursor: 'pointer',
+    transition: 'all 0.15s',
   },
   '.cm-panel.cm-search button:hover': {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: 'rgba(56, 189, 248, 0.15)',
+    borderColor: 'rgba(56, 189, 248, 0.3)',
+  },
+  '.cm-panel.cm-search button[name="close"]': {
+    border: 'none',
+    background: 'transparent',
+    color: 'var(--deep-sea-text-muted)',
+    padding: '4px 6px',
+    fontSize: '14px',
+    borderRadius: '4px',
+  },
+  '.cm-panel.cm-search button[name="close"]:hover': {
+    color: 'var(--deep-sea-text)',
+    background: 'rgba(255, 255, 255, 0.08)',
+    borderColor: 'transparent',
   },
   '.cm-panel.cm-search label': {
     color: 'var(--deep-sea-text-muted)',
     fontSize: '12px',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4px',
+    cursor: 'pointer',
   },
-  '.cm-searchMatch': {
+  '.cm-panel.cm-search label:hover': {
+    color: 'var(--deep-sea-text)',
+  },
+  '.cm-panel.cm-search input[type="checkbox"]': {
+    appearance: 'none',
+    width: '14px',
+    height: '14px',
+    border: '1px solid rgba(255, 255, 255, 0.2)',
+    borderRadius: '3px',
+    backgroundColor: 'transparent',
+    cursor: 'pointer',
+    position: 'relative',
+  },
+  '.cm-panel.cm-search input[type="checkbox"]:checked': {
     backgroundColor: 'rgba(56, 189, 248, 0.2)',
+    borderColor: 'var(--deep-sea-accent)',
+  },
+  // Use br to separate search rows cleanly
+  '.cm-panel.cm-search br': {
+    display: 'block',
+    content: '""',
+    marginTop: '4px',
+  },
+
+  // Search match highlights — high contrast amber
+  '.cm-searchMatch': {
+    backgroundColor: 'rgba(250, 204, 21, 0.25)',
+    outline: '1px solid rgba(250, 204, 21, 0.4)',
     borderRadius: '2px',
   },
   '.cm-searchMatch.cm-searchMatch-selected': {
-    backgroundColor: 'rgba(56, 189, 248, 0.4)',
+    backgroundColor: 'rgba(250, 204, 21, 0.45)',
+    outline: '2px solid rgba(250, 204, 21, 0.7)',
+    borderRadius: '2px',
   },
+
   '.cm-placeholder': {
     color: 'var(--deep-sea-text-muted)',
-  },
-  '.cm-foldGutter': {
-    color: 'rgba(148, 163, 184, 0.3)',
   },
 }, { dark: true });
 

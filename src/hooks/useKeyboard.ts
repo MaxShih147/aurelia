@@ -10,6 +10,7 @@ interface KeyboardActions {
   onTogglePreview: () => void;
   onToggleOutline: () => void;
   onToggleFullScreen: () => void;
+  onToggleSettings: () => void;
 }
 
 export function useKeyboard(actions: KeyboardActions) {
@@ -58,6 +59,10 @@ export function useKeyboard(actions: KeyboardActions) {
             e.preventDefault();
             actions.onToggleFullScreen();
           }
+          break;
+        case ',':
+          e.preventDefault();
+          actions.onToggleSettings();
           break;
       }
     };

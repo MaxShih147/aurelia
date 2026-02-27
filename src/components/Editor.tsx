@@ -1,6 +1,6 @@
 import { useEffect, useRef, useImperativeHandle, forwardRef, useCallback } from 'react';
 import { EditorState, Compartment } from '@codemirror/state';
-import { EditorView, keymap, placeholder, lineNumbers, highlightActiveLine, highlightActiveLineGutter, drawSelection, dropCursor } from '@codemirror/view';
+import { EditorView, ViewPlugin, keymap, placeholder, lineNumbers, highlightActiveLine, highlightActiveLineGutter, drawSelection, dropCursor } from '@codemirror/view';
 import { defaultKeymap, indentWithTab, history, historyKeymap, undo, redo } from '@codemirror/commands';
 import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
 import { languages } from '@codemirror/language-data';
@@ -83,6 +83,25 @@ function handleListContinuation(view: EditorView): boolean {
 
   return false;
 }
+
+// Disable spellcheck/autocapitalize on search panel inputs
+const searchInputPatch = ViewPlugin.fromClass(class {
+  observer: MutationObserver;
+  constructor(view: EditorView) {
+    this.observer = new MutationObserver(() => {
+      view.dom.querySelectorAll<HTMLInputElement>('.cm-search input[type="text"], .cm-search .cm-textfield').forEach(el => {
+        if (el.getAttribute('autocapitalize') !== 'off') {
+          el.spellcheck = false;
+          el.autocapitalize = 'off';
+          el.setAttribute('autocorrect', 'off');
+          el.setAttribute('autocomplete', 'off');
+        }
+      });
+    });
+    this.observer.observe(view.dom, { childList: true, subtree: true });
+  }
+  destroy() { this.observer.disconnect(); }
+});
 
 // Compartments for dynamic reconfiguration
 const spellCheckCompartment = new Compartment();
@@ -171,6 +190,8 @@ const Editor = forwardRef<EditorHandle, EditorProps>(function Editor(
         focusModeExtension,
         // Image drop
         createImageDropHandler(() => filePathRef.current ?? null),
+        // Patch search inputs to disable spellcheck/autocapitalize
+        searchInputPatch,
       ],
     });
 
